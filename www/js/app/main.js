@@ -47,7 +47,6 @@ function latLongToVector3(lat, lon, radius, heigth) {
 // simple function that converts the density data to the markers on screen
 // the height of each marker is relative to the density.
 function addDensity(data) {
-	console.log("!");
    // the geometry that will contain all our cubes
    var everything = new THREE.Geometry();
    // material to use for each of our elements. Could use a set of materials to
@@ -63,9 +62,12 @@ function addDensity(data) {
 
        // calculate the position where we need to start the cube
        var position = latLongToVector3(y, x, 600, 2);
+       //position = new THREE.Vector3(x*5,y*5,0);
        //console.log(position);
        // create the cube
-       var cubeGeom = new THREE.CubeGeometry(5,5,1+value/8,1,1,1);
+       var depth = 1+value/8;
+       //depth = 5;
+       var cubeGeom = new THREE.CubeGeometry(5,5,depth,1,1,1);
        cubeGeom.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, -(1+value/8)/2 ) );
        var cube = new THREE.Mesh(cubeGeom, cubeMat);
 
