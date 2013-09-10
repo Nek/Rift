@@ -7,6 +7,11 @@ requirejs.config({
     baseUrl: 'js/lib',
     paths: {
         app: '../app'
+    },
+    shim: {
+        'dat.GUI' : {
+            exports: 'dat'
+        }
     }
 });
 
