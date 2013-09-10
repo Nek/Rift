@@ -3,8 +3,9 @@ require(['three.min','jquery', 'CSVToArray', 'domReady'],function (THREE, $, CSV
 // Setup scene parameters object
 function Params() {
   this.cameraX = 1800;
-  this.cameraY = 500;
-  this.cameraZ = 1800;
+  this.speed = 5;
+  this.verticalPosition = 500;
+  this.distance = 1800;
 }
 var params = new Params();
 
@@ -24,12 +25,12 @@ var camera = new THREE.PerspectiveCamera(
 
 //THREEx.WindowResize(renderer, camera);
 
-camera.position.set( params.cameraX, params.cameraY, params.cameraZ );
+camera.position.set( params.cameraX, params.verticalPosition, params.distance );
 camera.lookAt( scene.position );
 
 var light = new THREE.DirectionalLight(0x3333ee, 3.5, 500 );
 scene.add( light );
-light.position.set(params.cameraX, params.cameraY, params.cameraZ);
+light.position.set(params.cameraX, params.verticalPosition, params.distance);
 
  // we wait until the document is loaded before loading the
  // density data.
@@ -125,7 +126,7 @@ function addDensity(data) {
 // add a simple light
 function addLights() {
     light = new THREE.DirectionalLight(0x3333ee, 3.5, 500 );
-    light.position.set(params.cameraX,params.cameraY,params.cameraZ);
+    light.position.set(params.cameraX,params.verticalPosition,params.distance);
     scene.add( light );
 }
 
@@ -133,14 +134,12 @@ var axis = new THREE.Vector3(0,1,0);
 
 function render() {
     var timer = Date.now() * 0.0001;
-    //camera.position.x = (Math.cos( timer ) *  params.cameraX);
-    //camera.position.z = (Math.sin( timer ) *  params.cameraZ) ;
     camera.lookAt( scene.position );
     light.position = camera.position;
     light.lookAt(scene.position);
     renderer.render( scene, camera );
     requestAnimationFrame( render );
-    rotateAroundWorldAxis(total, axis, (Math.PI / 180)/90);
+    rotateAroundWorldAxis(total, axis, params.speed * (Math.PI / 180)/90);
 
 }
 
@@ -188,12 +187,12 @@ var gui = new dat.GUI({
     });
 
 function updateCam() {
-  camera.position.set(params.cameraX, params.cameraY, params.cameraZ);
+  camera.position.set(params.cameraX, params.verticalPosition, params.distance);
 }
  
-gui.add(params, 'cameraX').onChange(updateCam);
-gui.add(params, 'cameraY').onChange(updateCam);
-gui.add(params, 'cameraZ').onChange(updateCam);
+gui.add(params, 'speed');
+gui.add(params, 'verticalPosition').onChange(updateCam);
+gui.add(params, 'distance').onChange(updateCam);
 
 gui.remember(params);
 gui.revert();
