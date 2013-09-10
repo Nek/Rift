@@ -11,6 +11,9 @@ requirejs.config({
     shim: {
         'dat.GUI' : {
             exports: 'dat'
+        },
+        'rainbowvis' : {
+            exports: 'Rainbow'
         }
     }
 });

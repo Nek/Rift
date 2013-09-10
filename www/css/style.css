@@ -15,3 +15,15 @@ canvas {
     margin-left: -600px;
     margin-top: -600px;
 }
+
+#lines {
+  background-size: 50px 50px;
+  background-image: repeating-linear-gradient(0deg, #541e72, #541e72 1px, transparent 1px, transparent 50px),repeating-linear-gradient(-90deg, #541e72, #541e72 1px, transparent 1px, transparent 50px);
+  height: 200%;
+  width: 100%;
+  opacity: 0.7;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -4;
+}
