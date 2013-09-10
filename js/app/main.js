@@ -63,8 +63,8 @@ var colors = [
        0xFA750D,
        0xFE9B19,
        0xFFC142,
-       0xFFE48A,
-       0xFFF8DE
+       0xFFE48A
+       //,0xFFF8DE
        ];
 rainbow.setSpectrum.apply(rainbow, colors.map(function(v){
   return '#' + v.toString(16);
