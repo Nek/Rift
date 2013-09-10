@@ -16,5 +16,6 @@ module.exports = {
                 useConsole: !namedArgs.quiet
             }));
         }
-    }
+    },
+    ghdeploy: require('volo-ghdeploy')('www', 'deploy')
 };
