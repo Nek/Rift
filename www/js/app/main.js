@@ -1,16 +1,42 @@
-require(['three.min','jquery', 'CSVToArray', 'domReady'],function (THREE, $, CSVToArray) {
+requirejs(['three.min','jquery', 'CSVToArray', 'domReady'],function (THREE, $, CSVToArray) {
 
-// Setup scene parameters object
-function Params() {
-  this.cameraX = 1800;
-  this.speed = 5;
-  this.verticalPosition = 500;
-  this.distance = 1800;
+
+this.cameraX = 1800;
+this.rotation = 0; 
+this.verticalPosition = 500;
+this.distance = 1800;
+
+
   this.fullscreen = function() {
     document.body.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
   }
-}
+
 var params = new Params();
+
+var self = this;
+
+var osc = require('node-osc/lib/osc');
+var oscServer = new osc.Server(3333, '0.0.0.0');
+oscServer.on("message", function (msg, rinfo) {
+    if (msg[0] === "#bundle") {
+      msg.slice(2).forEach(function(v){
+        switch (v[0]) {
+          case "/rotation": 
+            self.rotation = v[1];
+            break;
+          case "/vertical position":
+            self.verticalPosition = v[1];
+            break;
+          case "distance to camera":
+            self.distance = v[1];
+            break;
+          default: null;
+        }
+      }); 
+    }
+});
+
+
 
 var renderer = new THREE.WebGLRenderer({'antialias':true});
 renderer.setSize( 1200, 1200 );
@@ -27,12 +53,12 @@ var camera = new THREE.PerspectiveCamera(
 
 //THREEx.WindowResize(renderer, camera);
 
-camera.position.set( params.cameraX, params.verticalPosition, params.distance );
+camera.position.set( self.cameraX, self.verticalPosition, self.distance );
 camera.lookAt( scene.position );
 
 var light = new THREE.DirectionalLight(0x3333ee, 3.5, 500 );
 scene.add( light );
-light.position.set(params.cameraX, params.verticalPosition, params.distance);
+light.position.set(self.cameraX, self.verticalPosition, self.distance);
 
  // we wait until the document is loaded before loading the
  // density data.
@@ -78,7 +104,7 @@ function addDensity(data) {
    everything = new THREE.Geometry();
    // material to use for each of our elements. Could use a set of materials to
    // add colors relative to the density. Not done here.
-      var materials = [];
+    var materials = [];
 
    var max = 0;
    var min = 1;
@@ -128,75 +154,21 @@ function addDensity(data) {
 // add a simple light
 function addLights() {
     light = new THREE.DirectionalLight(0x3333ee, 3.5, 500 );
-    light.position.set(params.cameraX,params.verticalPosition,params.distance);
+    light.position.set(self.cameraX,self.verticalPosition,self.distance);
     scene.add( light );
 }
 
 var axis = new THREE.Vector3(0,1,0);
 
 function render() {
-    var timer = Date.now() * 0.0001;
+    camera.position.set(self.cameraX, self.verticalPosition, self.distance);
+    total.rotation.y = self.rotation * Math.PI / 180;
     camera.lookAt( scene.position );
     light.position = camera.position;
     light.lookAt(scene.position);
     renderer.render( scene, camera );
     requestAnimationFrame( render );
-    rotateAroundWorldAxis(total, axis, params.speed * (Math.PI / 180)/90);
-
 }
 
-// Rotate an object around an arbitrary axis in object space
-var rotObjectMatrix;
-function rotateAroundObjectAxis(object, axis, radians) {
-    rotObjectMatrix = new THREE.Matrix4();
-    rotObjectMatrix.makeRotationAxis(axis.normalize(), radians);
-
-    // old code for Three.JS pre r54:
-    // object.matrix.multiplySelf(rotObjectMatrix);      // post-multiply
-    // new code for Three.JS r55+:
-    object.matrix.multiply(rotObjectMatrix);
-
-    // old code for Three.js pre r49:
-    // object.rotation.getRotationFromMatrix(object.matrix, object.scale);
-    // new code for Three.js r50+:
-    object.rotation.setEulerFromRotationMatrix(object.matrix);
-}
-
-var rotWorldMatrix;
-// Rotate an object around an arbitrary axis in world space       
-function rotateAroundWorldAxis(object, axis, radians) {
-    rotWorldMatrix = new THREE.Matrix4();
-    rotWorldMatrix.makeRotationAxis(axis.normalize(), radians);
-
-    // old code for Three.JS pre r54:
-    //  rotWorldMatrix.multiply(object.matrix);
-    // new code for Three.JS r55+:
-    rotWorldMatrix.multiply(object.matrix);                // pre-multiply
-
-    object.matrix = rotWorldMatrix;
-
-    // old code for Three.js pre r49:
-    // object.rotation.getRotationFromMatrix(object.matrix, object.scale);
-    // new code for Three.js r50+:
-    object.rotation.setEulerFromRotationMatrix(object.matrix);
-}
-
-// Setup GUI
-
-
-var gui = new dat.GUI({
-        load: 'presets.json'
-    });
-
-function updateCam() {
-  camera.position.set(params.cameraX, params.verticalPosition, params.distance);
-}
  
-gui.add(params, 'speed');
-gui.add(params, 'verticalPosition').onChange(updateCam);
-gui.add(params, 'distance').onChange(updateCam);
-gui.add(params, 'fullscreen');
-
-gui.remember(params);
-gui.revert();
 });
