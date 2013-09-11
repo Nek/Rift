@@ -7,14 +7,14 @@ function Params() {
   this.verticalPosition = 500;
   this.distance = 1800;
   this.fullscreen = function() {
-    document.getElementById("content").webkitRequestFullScreen();
+    document.body.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
   }
 }
 var params = new Params();
 
 var renderer = new THREE.WebGLRenderer({'antialias':true});
 renderer.setSize( 1200, 1200 );
-document.getElementById("content").appendChild( renderer.domElement );
+document.body.appendChild( renderer.domElement );
 
 var scene = new THREE.Scene();
 
