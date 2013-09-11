@@ -1,19 +1,27 @@
 require(['three.min','jquery', 'CSVToArray', 'domReady'],function (THREE, $, CSVToArray) {
 
 // Setup scene parameters object
+var cameraX = 1800;
 function Params() {
-  this.cameraX = 1800;
-  this.speed = 5;
+  
+  this.rotation = 5;
   this.verticalPosition = 500;
   this.distance = 1800;
-  this.fullscreen = function() {
+  
+}
+
+document.addEventListener('keypress', function(e){
+  if (e.charCode === 102) {
     document.body.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
   }
-}
+},false);
+
+
 var params = new Params();
 
 var renderer = new THREE.WebGLRenderer({'antialias':true});
 renderer.setSize( 1200, 1200 );
+renderer.domElement.setAttribute("id", "globe");
 document.body.appendChild( renderer.domElement );
 
 var scene = new THREE.Scene();
@@ -27,12 +35,12 @@ var camera = new THREE.PerspectiveCamera(
 
 //THREEx.WindowResize(renderer, camera);
 
-camera.position.set( params.cameraX, params.verticalPosition, params.distance );
+camera.position.set( cameraX, params.verticalPosition, params.distance );
 camera.lookAt( scene.position );
 
 var light = new THREE.DirectionalLight(0x3333ee, 3.5, 500 );
 scene.add( light );
-light.position.set(params.cameraX, params.verticalPosition, params.distance);
+light.position.set(cameraX, params.verticalPosition, params.distance);
 
  // we wait until the document is loaded before loading the
  // density data.
@@ -128,7 +136,7 @@ function addDensity(data) {
 // add a simple light
 function addLights() {
     light = new THREE.DirectionalLight(0x3333ee, 3.5, 500 );
-    light.position.set(params.cameraX,params.verticalPosition,params.distance);
+    light.position.set(cameraX,params.verticalPosition,params.distance);
     scene.add( light );
 }
 
@@ -136,12 +144,14 @@ var axis = new THREE.Vector3(0,1,0);
 
 function render() {
     var timer = Date.now() * 0.0001;
+    updateCam();
+    //rotateAroundWorldAxis(total, axis, params.speed * (Math.PI / 180)/90);
+    total.rotation.y = params.rotation*Math.PI*2/360;
     camera.lookAt( scene.position );
     light.position = camera.position;
     light.lookAt(scene.position);
     renderer.render( scene, camera );
     requestAnimationFrame( render );
-    rotateAroundWorldAxis(total, axis, params.speed * (Math.PI / 180)/90);
 
 }
 
@@ -181,22 +191,12 @@ function rotateAroundWorldAxis(object, axis, radians) {
     object.rotation.setEulerFromRotationMatrix(object.matrix);
 }
 
-// Setup GUI
-
-
-var gui = new dat.GUI({
-        load: 'presets.json'
-    });
 
 function updateCam() {
-  camera.position.set(params.cameraX, params.verticalPosition, params.distance);
+  camera.position.set(cameraX, params.verticalPosition, params.distance);
 }
- 
-gui.add(params, 'speed');
-gui.add(params, 'verticalPosition').onChange(updateCam);
-gui.add(params, 'distance').onChange(updateCam);
-gui.add(params, 'fullscreen');
 
-gui.remember(params);
-gui.revert();
+anim('params',params).to(0, {}, 60);
+Timeline.getGlobalInstance().loop(-1);
+Timeline.getGlobalInstance().start();
 });

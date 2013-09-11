@@ -14,6 +14,9 @@ requirejs.config({
         },
         'rainbowvis' : {
             exports: 'Rainbow'
+        },
+        'timeline' : {
+            exports: ['anim', 'Timeline']
         }
     }
 });
