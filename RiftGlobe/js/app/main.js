@@ -37,10 +37,9 @@ oscServer.on("message", function (msg, rinfo) {
     }
 });
 
-
-
 var renderer = new THREE.WebGLRenderer({'antialias':true});
 renderer.setSize( 1200, 1200 );
+renderer.domElement.setAttribute("id", "globe");
 document.body.appendChild( renderer.domElement );
 
 var scene = new THREE.Scene();
@@ -60,6 +59,7 @@ camera.lookAt( scene.position );
 var light = new THREE.DirectionalLight(0x3333ee, 3.5, 500 );
 scene.add( light );
 light.position.set(self.cameraX, self.verticalPosition, self.distance);
+
 
  // we wait until the document is loaded before loading the
  // density data.
@@ -163,7 +163,6 @@ function addDensity(data) {
    total = new THREE.Mesh(everything, new THREE.MeshBasicMaterial({ vertexColors: THREE.VertexColors, morphTargets: true }));
 
    // and add the total mesh to the scene
-   console.log(total);
    scene.add(total);
 }   
 // add a simple light
@@ -185,6 +184,4 @@ function render() {
     renderer.render( scene, camera );
     requestAnimationFrame( render );
 }
-
- 
 });
