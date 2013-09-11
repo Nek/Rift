@@ -6,13 +6,15 @@ function Params() {
   this.speed = 5;
   this.verticalPosition = 500;
   this.distance = 1800;
+  this.fullscreen = function() {
+    document.body.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
+  }
 }
 var params = new Params();
 
 var renderer = new THREE.WebGLRenderer({'antialias':true});
 renderer.setSize( 1200, 1200 );
 document.body.appendChild( renderer.domElement );
-window.el = renderer.domElement;
 
 var scene = new THREE.Scene();
 
@@ -193,6 +195,7 @@ function updateCam() {
 gui.add(params, 'speed');
 gui.add(params, 'verticalPosition').onChange(updateCam);
 gui.add(params, 'distance').onChange(updateCam);
+gui.add(params, 'fullscreen');
 
 gui.remember(params);
 gui.revert();
