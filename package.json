@@ -1,11 +1,11 @@
 {
-  "amd": {},
-  "volo": {
-    "baseUrl": "www/js/lib",
-    "dependencies": {
-      "jquery": "github:jquery/jquery/2.0.3",
-      "three.min": "github:mrdoob/three.js/master",
-      "stats.min": "github:mrdoob/stats.js/master"
-    }
+  "name": "nw-demo",
+  "main": "index.html",
+  "window": {
+    "title": "RiftGlobe",
+    "toolbar": false
+  },
+  "dependencies": {
+    "node-osc": "~0.2.1"
   }
 }
