@@ -1,25 +1,16 @@
 requirejs(['three.min','jquery', 'CSVToArray', 'domReady'],function (THREE, $, CSVToArray) {
 
 
+
+
 this.cameraX = 1800;
 this.rotation = 0; 
 this.verticalPosition = 500;
-this.distance = 1800;
-
-
-  this.fullscreen = function() {
-    document.body.webkitRequestFullScreen(Element.ALLOW_KEYBOARD_INPUT);
-  }
-
-var params = new Params();
+this.distance = 5000;
 
 var self = this;
 
-var osc = require('node-osc/lib/osc');
-var oscServer = new osc.Server(3333, '0.0.0.0');
-oscServer.on("message", function (msg, rinfo) {
-    if (msg[0] === "#bundle") {
-      msg.slice(2).forEach(function(v){
+function parseOSCValue(v){
         switch (v[0]) {
           case "/rotation": 
             self.rotation = v[1];
@@ -27,12 +18,21 @@ oscServer.on("message", function (msg, rinfo) {
           case "/vertical position":
             self.verticalPosition = v[1];
             break;
-          case "distance to camera":
+          case "/distance to camera":
             self.distance = v[1];
             break;
           default: null;
         }
-      }); 
+      }
+
+var osc = require('node-osc/lib/osc');
+var oscServer = new osc.Server(3333, '0.0.0.0');
+oscServer.on("message", function (msg, rinfo) {
+  console.log(msg);
+    if (msg[0] === "#bundle") {
+      msg.slice(2).forEach(parseOSCValue); 
+    } else {
+      parseOSCValue(msg);
     }
 });
 
