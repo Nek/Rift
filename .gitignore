@@ -3,3 +3,4 @@ www-ghpages
 deploy
 node_modules/
 v8.log
+*.nw
