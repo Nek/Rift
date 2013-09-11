@@ -1,12 +1,10 @@
 requirejs(['three.min','jquery', 'CSVToArray', 'domReady'],function (THREE, $, CSVToArray) {
 
-
-
-
 this.cameraX = 1800;
 this.rotation = 0; 
 this.verticalPosition = 500;
 this.distance = 5000;
+this.flatness = 0;
 
 var self = this;
 
@@ -20,6 +18,9 @@ function parseOSCValue(v){
             break;
           case "/distance to camera":
             self.distance = v[1];
+            break;
+          case "/flatness":
+            self.flatness = v[1];
             break;
           default: null;
         }
@@ -101,10 +102,10 @@ rainbow.setSpectrum.apply(rainbow, colors.map(function(v){
 rainbow.setNumberRange(1, 200 ); 
 function addDensity(data) {
    // the geometry that will contain all our cubes
-   everything = new THREE.Geometry();
+   var everything = new THREE.Geometry();
+   var flatten = new THREE.Geometry();
    // material to use for each of our elements. Could use a set of materials to
    // add colors relative to the density. Not done here.
-    var materials = [];
 
    var max = 0;
    var min = 1;
@@ -127,28 +128,42 @@ function addDensity(data) {
        var min = Math.min(min, depth);
        //depth = 5;
        var color = rainbow.colourAt(depth);
+       var cubeMat = new THREE.MeshBasicMaterial({ vertexColors: THREE.VertexColors });
+       
+
        var cubeGeom = new THREE.CubeGeometry(5,5,depth,1,1,1);
        cubeGeom.faces.forEach(function(v){
         v.color.setHex(parseInt(color,16));
        });
        cubeGeom.applyMatrix( new THREE.Matrix4().makeTranslation( 0, 0, -(depth)/2 ) );
-       var cubeMat = new THREE.MeshBasicMaterial({ vertexColors: THREE.VertexColors });
-       //new THREE.MeshBasicMaterial({ color: parseInt(color,16) });
-       materials.push(cubeMat);
        var cube = new THREE.Mesh(cubeGeom, cubeMat);
-
-       // position the cube correctly
        cube.position = position;
        cube.lookAt( new THREE.Vector3(0,0,0) );
+       
+       THREE.GeometryUtils.merge(everything,cube);
+       
+
+       var flatGeom = new THREE.CubeGeometry(5,5,5,1,1,1);
+       //flatGeom.faces.forEach(function(v){
+       // v.color.setHex(parseInt(color,16));
+       //});
+       //new THREE.MeshBasicMaterial({ color: parseInt(color,16) });
+       var flat = new THREE.Mesh(flatGeom, cubeMat);
+       // position the cube correctly
+       flat.position = position;
+       flat.lookAt( new THREE.Vector3(0,0,0) );
 
        // merge with main model
-       THREE.GeometryUtils.merge(everything,cube,i);
+       THREE.GeometryUtils.merge(flatten,flat);
    }
    // create a new mesh, containing all the other meshes.
    //console.log(materials);
-   total = new THREE.Mesh(everything, new THREE.MeshBasicMaterial({ vertexColors: THREE.VertexColors }));
+   everything.morphTargets.push({name:"target0", vertices: flatten.vertices})
+
+   total = new THREE.Mesh(everything, new THREE.MeshBasicMaterial({ vertexColors: THREE.VertexColors, morphTargets: true }));
 
    // and add the total mesh to the scene
+   console.log(total);
    scene.add(total);
 }   
 // add a simple light
@@ -161,6 +176,7 @@ function addLights() {
 var axis = new THREE.Vector3(0,1,0);
 
 function render() {
+    total.morphTargetInfluences[0] = self.flatness;
     camera.position.set(self.cameraX, self.verticalPosition, self.distance);
     total.rotation.y = self.rotation * Math.PI / 180;
     camera.lookAt( scene.position );
