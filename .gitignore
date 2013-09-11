@@ -1,4 +1,4 @@
 www-built
 www-ghpages
 deploy
-node-modules
+node_modules/
