@@ -6,6 +6,7 @@
     "toolbar": false
   },
   "dependencies": {
-    "node-osc": "~0.2.1"
+    "node-osc": "~0.2.1",
+    "binpack": "0.1.0"
   }
 }

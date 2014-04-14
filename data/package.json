@@ -1,7 +1,0 @@
-{
-  "volo": {
-    "dependencies": {
-      "domReady": "github:requirejs/domReady/2.0.1"
-    }
-  }
-}

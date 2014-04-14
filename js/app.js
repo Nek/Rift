@@ -9,6 +9,9 @@ requirejs.config({
         app: '../app'
     },
     shim: {
+        'dat.GUI' : {
+            exports: 'dat'
+        },
         'rainbowvis' : {
             exports: 'Rainbow'
         }

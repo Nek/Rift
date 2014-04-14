@@ -9,16 +9,11 @@ html {
 }
 
 canvas {
-  z-index:100;
-}
-
-#globe {
     position: absolute;
     left: 50%;
     top: 50%;
     margin-left: -600px;
     margin-top: -600px;
-  z-index: -1;
 }
 
 #lines {

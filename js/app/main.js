@@ -1,50 +1,98 @@
 requirejs(['three.min','jquery', 'CSVToArray', 'domReady'],function (THREE, $, CSVToArray) {
 
-this.cameraX = 1800;
-this.rotation = 0; 
-this.verticalPosition = 500;
-this.distance = 5000;
-this.flatness = 0;
-
-var self = this;
-
-function parseOSCValue(v){
-        switch (v[0]) {
-          case "/rotation": 
-            self.rotation = v[1];
-            break;
-          case "/vertical position":
-            self.verticalPosition = v[1];
-            break;
-          case "/distance to camera":
-            self.distance = v[1];
-            break;
-          case "/flatness":
-            self.flatness = v[1];
-            break;
-          default: null;
-        }
-      }
+process.chdir(process.env.HOME);
 
 var osc = require('node-osc/lib/osc');
-var oscServer = new osc.Server(3333, '0.0.0.0');
+var oscServer;
+var renderID;
+
+
+var init = {};
+
+init.cameraX = 1800;
+init.rotation = 0;
+init.verticalPosition = 500;
+init.distance = 5000;
+init.flatness = 0;
+
+var frames = [];
+
+var frameData = {};
+var sceneReady = false;
+
+var frames;
+var recordMode = false;
+
+function parseOSCValue(v){
+  switch (v[0]) {
+    case "/rotation":
+      frameData.rotation = v[1];
+      break;
+    case "/vertical position":
+      frameData.verticalPosition = v[1];
+      break;
+    case "/distance to camera":
+      frameData.distance = v[1];
+      break;
+    case "/flatness":
+      frameData.flatness = v[1];
+      var d = {
+          rotation: frameData.rotation,
+          verticalPosition: frameData.verticalPosition,
+          distance: frameData.distance,
+          flatness: frameData.flatness,
+          cameraX: 1800
+        };
+      if (recordMode) frames.push(d);
+      renderID = requestAnimationFrame(function(){
+        if (sceneReady) updateAndRender(d);
+      });
+      frameData = {};
+      break;
+    case "/record":
+      recordMode = !recordMode;
+      if (recordMode) frames = [];
+      else console.log(frames);
+    default: null;
+  }
+};
+
+var data, id;
+
+oscServer = new osc.Server(3333, '0.0.0.0');
 oscServer.on("message", function (msg, rinfo) {
-  console.log(msg);
     if (msg[0] === "#bundle") {
-      msg.slice(2).forEach(parseOSCValue); 
+      msg.slice(2).forEach(parseOSCValue);
     } else {
       parseOSCValue(msg);
     }
 });
 
-var renderer = new THREE.WebGLRenderer({'antialias':true});
+var currentFrame, saveMode;
+saveMode = false;
+
+
+$('body').keypress(function(e){
+  if (e.keyCode === 114) {
+    cancelAnimationFrame(renderID);
+    currentFrame = 0;
+    saveMode = true;
+    renderID = requestAnimationFrame(render);
+    console.log("started rendering");
+  };
+});
+
+
+var renderer, scene, camera, light, total;
+
+renderer = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer: true});
 renderer.setSize( 1200, 1200 );
 renderer.domElement.setAttribute("id", "globe");
 document.body.appendChild( renderer.domElement );
 
-var scene = new THREE.Scene();
+scene = new THREE.Scene();
 
-var camera = new THREE.PerspectiveCamera(
+camera = new THREE.PerspectiveCamera(
     35,             // Field of view
     1,      // Aspect ratio
     0.1,            // Near plane
@@ -53,21 +101,12 @@ var camera = new THREE.PerspectiveCamera(
 
 //THREEx.WindowResize(renderer, camera);
 
-camera.position.set( self.cameraX, self.verticalPosition, self.distance );
+camera.position.set( init.cameraX, init.verticalPosition, init.distance );
 camera.lookAt( scene.position );
 
-var light = new THREE.DirectionalLight(0x3333ee, 3.5, 500 );
+light = new THREE.DirectionalLight(0x3333ee, 3.5, 500 );
 scene.add( light );
-light.position.set(self.cameraX, self.verticalPosition, self.distance);
-
-
- // we wait until the document is loaded before loading the
- // density data.
-$.get('data/density.csv', function(data) {
-  addDensity(CSVToArray(data));
-  render();
-});
- //});
+light.position.set(init.cameraX, init.verticalPosition, init.distance);
 
 // convert the positions from a lat, lon to a position on a sphere.
 function latLongToVector3(lat, lon, radius, heigth) {
@@ -79,28 +118,12 @@ function latLongToVector3(lat, lon, radius, heigth) {
     var z = (radius+heigth) * Math.cos(phi) * Math.sin(theta);
 
     return new THREE.Vector3(x,y,z);
-}
+};
 
-var total;
 // simple function that converts the density data to the markers on screen
 // the height of each marker is relative to the density.
-var rainbow = new Rainbow();
-var colors = [
-       0x1A0822,
-       0x541E72,
-       0xA1365C,
-       0xD85133,
-       0xFA750D,
-       0xFE9B19,
-       0xFFC142,
-       0xFFE48A
-       //,0xFFF8DE
-       ];
-rainbow.setSpectrum.apply(rainbow, colors.map(function(v){
-  return '#' + v.toString(16);
-}));
-rainbow.setNumberRange(1, 200 ); 
-function addDensity(data) {
+
+function addDensity(data, rainbow) {
    // the geometry that will contain all our cubes
    var everything = new THREE.Geometry();
    var flatten = new THREE.Geometry();
@@ -122,14 +145,14 @@ function addDensity(data) {
        //position = new THREE.Vector3(x*5,y*5,0);
        //console.log(position);
        // create the cube
-      
+
        var depth = (5+Math.sqrt(4*value*5));
        var max = Math.max(max, depth);
        var min = Math.min(min, depth);
        //depth = 5;
        var color = rainbow.colourAt(depth);
        var cubeMat = new THREE.MeshBasicMaterial({ vertexColors: THREE.VertexColors });
-       
+
 
        var cubeGeom = new THREE.CubeGeometry(5,5,depth,1,1,1);
        cubeGeom.faces.forEach(function(v){
@@ -139,9 +162,9 @@ function addDensity(data) {
        var cube = new THREE.Mesh(cubeGeom, cubeMat);
        cube.position = position;
        cube.lookAt( new THREE.Vector3(0,0,0) );
-       
+
        THREE.GeometryUtils.merge(everything,cube);
-       
+
 
        var flatGeom = new THREE.CubeGeometry(5,5,5,1,1,1);
        //flatGeom.faces.forEach(function(v){
@@ -164,24 +187,79 @@ function addDensity(data) {
 
    // and add the total mesh to the scene
    scene.add(total);
-}   
-// add a simple light
-function addLights() {
-    light = new THREE.DirectionalLight(0x3333ee, 3.5, 500 );
-    light.position.set(self.cameraX,self.verticalPosition,self.distance);
-    scene.add( light );
+
+   sceneReady = true;
+
+   updateAndRender(init);
+};
+
+//1. render frame to disk
+//2. increase frame
+//2. modify 3d scene
+//3. request next frame
+
+
+function updateAndRender(d) {
+  total.morphTargetInfluences[0] = d.flatness;
+  camera.position.set(1800, d.verticalPosition, d.distance);
+  total.rotation.y = d.rotation * Math.PI / 180;
+  camera.lookAt( scene.position );
+  light.position = camera.position;
+  light.lookAt(scene.position);
+  renderer.render( scene, camera );
 }
 
-var axis = new THREE.Vector3(0,1,0);
+var fs = require('fs');
+
+function formatFrame(n) {
+  if (n < 10) return "00"+n;
+  else if (n < 100) return "0"+n;
+  else return n;
+}
 
 function render() {
-    total.morphTargetInfluences[0] = self.flatness;
-    camera.position.set(self.cameraX, self.verticalPosition, self.distance);
-    total.rotation.y = self.rotation * Math.PI / 180;
-    camera.lookAt( scene.position );
-    light.position = camera.position;
-    light.lookAt(scene.position);
-    renderer.render( scene, camera );
-    requestAnimationFrame( render );
-}
+  updateAndRender(frames[currentFrame]);
+  renderID = requestAnimationFrame(function(){
+    var image = renderer.domElement.toDataURL('image/png').slice(22);
+    function onRender(err){
+      if (err) throw err;
+      console.log("rendered " + currentFrame + '.png');
+      currentFrame ++;
+      if (currentFrame === frames.length) {
+        saveMode = false;
+        console.log("done rendering")
+      } else {
+        renderID = requestAnimationFrame(render);
+      };
+    }
+    fs.writeFile( formatFrame(currentFrame) + '.png', new Buffer(image, 'base64'), onRender);
+  });
+};
+
+// we wait until the document is loaded before loading the
+// density data.
+$.get('data/density.csv', function(data) {
+
+  var rainbow, colors;
+  rainbow = new Rainbow();
+  colors = [
+       0x1A0822,
+       0x541E72,
+       0xA1365C,
+       0xD85133,
+       0xFA750D,
+       0xFE9B19,
+       0xFFC142,
+       0xFFE48A
+       //,0xFFF8DE
+       ];
+  rainbow.setSpectrum.apply(rainbow, colors.map(function(v){
+    return '#' + v.toString(16);
+  }));
+  rainbow.setNumberRange(1, 200 );
+
+  addDensity(CSVToArray(data), rainbow);
 });
+
+});
+
